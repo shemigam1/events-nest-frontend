@@ -100,12 +100,18 @@ export default function BudgetTab({ eventId }) {
 
                 {/* Stat grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginBottom: 20 }}>
-                    <Stat label="Total budget" value={ngn(summary.totalBudget)} />
-                    <Stat label="Planned spend" value={ngn(summary.totalPlanned)} />
-                    <Stat label="Actual spend" value={ngn(summary.totalPaid)} accent={spendPercent > 80 ? 'error' : undefined} />
-                    <Stat label="Remaining" value={remaining != null ? ngn(remaining) : '—'} accent={remaining != null && remaining < 0 ? 'error' : 'success'} />
-                    <Stat label="Revenue" value={ngn(summary.totalIncome)} accent="success" />
-                    <Stat label="Net P&L" value={ngn(summary.net)} accent={Number(summary.net ?? 0) >= 0 ? 'success' : 'error'} />
+                    <Stat label="Total budget" value={ngn(summary.totalBudget)}
+                        tooltip="The budget ceiling you set for this event" />
+                    <Stat label="Planned spend" value={ngn(summary.totalPlanned)}
+                        tooltip="Sum of contract values that are signed but not yet in escrow" />
+                    <Stat label="Actual spend" value={ngn(summary.totalPaid)} accent={spendPercent > 80 ? 'error' : undefined}
+                        tooltip="Sum of contracts fully paid out (escrow released)" />
+                    <Stat label="Remaining" value={remaining != null ? ngn(remaining) : '—'} accent={remaining != null && remaining < 0 ? 'error' : 'success'}
+                        tooltip="Total budget minus all planned and paid expenses" />
+                    <Stat label="Revenue" value={ngn(summary.totalIncome)} accent="success"
+                        tooltip="Ticket sales revenue plus contribution pool income" />
+                    <Stat label="Net P&L" value={ngn(summary.net)} accent={Number(summary.net ?? 0) >= 0 ? 'success' : 'error'}
+                        tooltip="Revenue minus total expenses (positive = profit, negative = loss)" />
                 </div>
 
                 {/* Spend bar */}
@@ -199,11 +205,25 @@ function NoBudgetCard({ onCreate }) {
     );
 }
 
-function Stat({ label, value, accent }) {
+function Stat({ label, value, accent, tooltip }) {
     const color = accent === 'success' ? '#0F9D58' : accent === 'error' ? 'var(--error)' : 'var(--text-1)';
     return (
         <div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>{label}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                {label}
+                {tooltip && (
+                    <span
+                        title={tooltip}
+                        aria-label={tooltip}
+                        style={{
+                            cursor: 'help', fontSize: 11, lineHeight: 1,
+                            color: 'var(--text-3)', userSelect: 'none',
+                        }}
+                    >
+                        ⓘ
+                    </span>
+                )}
+            </div>
             <div className="mp-num" style={{ fontSize: 22, fontWeight: 700, color, marginTop: 4 }}>
                 {value}
             </div>
@@ -263,24 +283,24 @@ function LineItemsCard({ title, items, eventId, canPay, canDelete }) {
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 500, color: 'var(--text-1)', fontSize: 14 }}>
-                                {item.description}
+                                {item.contractTitle ?? item.description ?? '—'}
                             </span>
-                            <span style={{
-                                fontSize: 11, padding: '2px 7px', borderRadius: 6,
-                                background: 'var(--surface-subtle)', color: 'var(--text-2)', fontWeight: 600,
-                            }}>
-                                {CATEGORY_LABELS[item.category] ?? item.category}
-                            </span>
+                            {(item.category || item.contractId) && (
+                                <span style={{
+                                    fontSize: 11, padding: '2px 7px', borderRadius: 6,
+                                    background: 'var(--surface-subtle)', color: 'var(--text-2)', fontWeight: 600,
+                                }}>
+                                    {item.contractId ? 'Contract' : (CATEGORY_LABELS[item.category] ?? item.category)}
+                                </span>
+                            )}
                         </div>
                         <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>
-                            Planned: <span className="mp-num" style={{ color: 'var(--text-1)', fontWeight: 600 }}>
-                                {ngn(item.plannedAmount)}
-                            </span>
-                            {item.actualAmount != null && item.actualAmount !== 0 && (
-                                <> · Paid: <span className="mp-num" style={{ color: '#0F9D58', fontWeight: 600 }}>
-                                    {ngn(item.actualAmount)}
-                                </span></>
+                            {item.vendorBusinessName && (
+                                <span style={{ marginRight: 8 }}>{item.vendorBusinessName} ·</span>
                             )}
+                            Planned: <span className="mp-num" style={{ color: 'var(--text-1)', fontWeight: 600 }}>
+                                {ngn(item.amount)}
+                            </span>
                         </div>
                         {payingId === item.id && (
                             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>

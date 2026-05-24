@@ -121,11 +121,14 @@ export default function EventDetailPage() {
     const isOwnEvent = Boolean(currentUserId && e.createdBy && currentUserId === e.createdBy);
     const cantBook = e.status !== 'PUBLISHED' || allSoldOut || isOwnEvent;
 
+    const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
+
     return (
         <PageShell>
             {e.coverImageUrl ? (
                 <div
                     style={{
+                        position: 'relative',
                         height: 320,
                         backgroundImage: `url(${e.coverImageUrl})`,
                         backgroundSize: 'cover',
@@ -134,14 +137,52 @@ export default function EventDetailPage() {
                     }}
                     role="img"
                     aria-label={e.title}
-                />
+                >
+                    {canGoBack && (
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            style={{
+                                position: 'absolute', top: 16, left: 24,
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
+                                border: '1px solid rgba(255,255,255,0.18)',
+                                borderRadius: 20, padding: '6px 14px',
+                                cursor: 'pointer', color: '#fff',
+                                fontSize: 13, fontFamily: 'inherit', fontWeight: 500,
+                                lineHeight: 1,
+                            }}
+                        >
+                            <Icons.arrowL size={13} /> Back
+                        </button>
+                    )}
+                </div>
             ) : (
                 <div
                     className="mp-placeholder"
                     data-label="EVENT IMAGE"
-                    style={{ height: 320 }}
+                    style={{ position: 'relative', height: 320 }}
                     aria-hidden="true"
-                />
+                >
+                    {canGoBack && (
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            style={{
+                                position: 'absolute', top: 16, left: 24,
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                borderRadius: 20, padding: '6px 14px',
+                                cursor: 'pointer', color: '#fff',
+                                fontSize: 13, fontFamily: 'inherit', fontWeight: 500,
+                                lineHeight: 1,
+                            }}
+                        >
+                            <Icons.arrowL size={13} /> Back
+                        </button>
+                    )}
+                </div>
             )}
 
             <div style={{ maxWidth: 1200, margin: '-80px auto 0', padding: '0 24px 64px', position: 'relative' }}>

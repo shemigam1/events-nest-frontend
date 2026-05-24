@@ -154,6 +154,95 @@ function VendorPanel({ vendor }) {
                           value={v.baseRate != null ? formatNaira(v.baseRate) : '—'} />
                 </div>
 
+                {/* Contact info */}
+                {(v.businessEmail || v.businessPhone || v.businessAddress) && (
+                    <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.05em', marginBottom: 10 }}>
+                            CONTACT INFO
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {v.businessEmail && (
+                                <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-3)', marginRight: 6 }}>Email</span>
+                                    <a href={`mailto:${v.businessEmail}`} style={{ color: 'var(--mp-blue)' }}>{v.businessEmail}</a>
+                                </div>
+                            )}
+                            {v.businessPhone && (
+                                <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-3)', marginRight: 6 }}>Phone</span>
+                                    {v.businessPhone}
+                                </div>
+                            )}
+                            {v.businessAddress && (
+                                <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-3)', marginRight: 6 }}>Address</span>
+                                    {v.businessAddress}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Social links */}
+                {(v.websiteUrl || v.instagramHandle || v.twitterHandle || v.facebookHandle) && (
+                    <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.05em', marginBottom: 10 }}>
+                            SOCIAL &amp; WEB
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {v.websiteUrl && (
+                                <a href={v.websiteUrl} target="_blank" rel="noopener noreferrer" style={{
+                                    fontSize: 12, padding: '4px 10px', borderRadius: 8,
+                                    border: '1px solid var(--border)', color: 'var(--mp-blue)',
+                                    textDecoration: 'none', fontWeight: 500,
+                                }}>🌐 Website</a>
+                            )}
+                            {v.instagramHandle && (
+                                <a href={`https://instagram.com/${v.instagramHandle.replace('@','')}`} target="_blank" rel="noopener noreferrer" style={{
+                                    fontSize: 12, padding: '4px 10px', borderRadius: 8,
+                                    border: '1px solid var(--border)', color: 'var(--text-1)',
+                                    textDecoration: 'none', fontWeight: 500,
+                                }}>Instagram {v.instagramHandle.startsWith('@') ? v.instagramHandle : `@${v.instagramHandle}`}</a>
+                            )}
+                            {v.twitterHandle && (
+                                <a href={`https://twitter.com/${v.twitterHandle.replace('@','')}`} target="_blank" rel="noopener noreferrer" style={{
+                                    fontSize: 12, padding: '4px 10px', borderRadius: 8,
+                                    border: '1px solid var(--border)', color: 'var(--text-1)',
+                                    textDecoration: 'none', fontWeight: 500,
+                                }}>X {v.twitterHandle.startsWith('@') ? v.twitterHandle : `@${v.twitterHandle}`}</a>
+                            )}
+                            {v.facebookHandle && (
+                                <a href={`https://facebook.com/${v.facebookHandle}`} target="_blank" rel="noopener noreferrer" style={{
+                                    fontSize: 12, padding: '4px 10px', borderRadius: 8,
+                                    border: '1px solid var(--border)', color: 'var(--text-1)',
+                                    textDecoration: 'none', fontWeight: 500,
+                                }}>Facebook</a>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Verification timeline */}
+                {v.verificationSubmittedAt && (
+                    <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.05em', marginBottom: 10 }}>
+                            VERIFICATION TIMELINE
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--text-3)', marginRight: 6 }}>Submitted</span>
+                                {formatEventDate(v.verificationSubmittedAt)}
+                            </div>
+                            {v.verifiedAt && (
+                                <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
+                                    <span style={{ fontWeight: 600, color: 'var(--text-3)', marginRight: 6 }}>Verified</span>
+                                    {formatEventDate(v.verifiedAt)}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Service areas + portfolio */}
                 {(v.serviceAreas?.length > 0 || v.portfolioImages?.length > 0) && (
                     <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>

@@ -11,6 +11,8 @@ import {
     useCreateVendorInviteMutation,
     useGetVendorInvitesForEventQuery,
 } from '@/features/vendor/vendorInvitesApi';
+import { useSendInquiryMutation } from '@/features/vendor/inquiriesApi';
+import { useGetConversationsQuery } from '@/features/messages/messagesApi';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Icons } from '@/components/ui/Icon';
@@ -439,6 +441,11 @@ function ApplicationsPane({ eventId }) {
     const [reject, rejectState] = useRejectVendorApplicationMutation();
     const [rate, rateState]     = useRateVendorMutation();
 
+    // Conversations — used to detect existing threads for accepted vendors.
+    const { data: conversations = [] } = useGetConversationsQuery();
+    // pendingInquiry: { vendorProfileId, vendorUserId } — opens the compose modal.
+    const [pendingInquiry, setPendingInquiry] = useState(null);
+
     const [filter, setFilter]         = useState('all');
     const [actionError, setError]     = useState('');
     const [pendingReject, setPendingReject] = useState(null);
@@ -533,7 +540,13 @@ function ApplicationsPane({ eventId }) {
                                 onAccept={() => handleAccept(a)}
                                 onReject={() => setPendingReject(a)}
                                 onRate={() => setPendingRate(a)}
+                                onInquiry={() => setPendingInquiry({
+                                    vendorProfileId: a.vendorProfileId,
+                                    vendorUserId: a.vendorUserId,
+                                })}
                                 onViewProfile={() => navigate(`/vendors/${a.vendorProfileId}`, { state: { eventId } })}
+                                conversations={conversations}
+                                eventId={eventId}
                                 busy={
                                     (acceptState.isLoading && acceptState.originalArgs?.applicationId === a.id)
                                     || (rejectState.isLoading && pendingReject?.id === a.id)
@@ -568,6 +581,13 @@ function ApplicationsPane({ eventId }) {
                     error={rateError}
                     onSubmit={handleRate}
                     onDismiss={() => { setPendingRate(null); setRateError(''); }}
+                />
+            )}
+            {pendingInquiry && (
+                <ApplicationInquiryModal
+                    eventId={eventId}
+                    vendorProfileId={pendingInquiry.vendorProfileId}
+                    onDismiss={() => setPendingInquiry(null)}
                 />
             )}
         </div>
@@ -770,7 +790,8 @@ function FilterBar({ filters, counts, active, onChange }) {
     );
 }
 
-function ApplicationRow({ application, isLast, onAccept, onReject, onRate, onViewProfile, busy }) {
+function ApplicationRow({ application, isLast, onAccept, onReject, onRate, onInquiry, onViewProfile, conversations, eventId, busy }) {
+    const navigate   = useNavigate();
     const style = STATUS_STYLE[application.status] || STATUS_STYLE.PENDING;
     const isPending  = application.status === 'PENDING';
     const isAccepted = application.status === 'ACCEPTED';
@@ -779,6 +800,17 @@ function ApplicationRow({ application, isLast, onAccept, onReject, onRate, onVie
     const trust      = application.trustScore != null ? Number(application.trustScore) : null;
     const completed  = application.completedContracts ?? 0;
     const total      = application.totalContracts ?? 0;
+
+    // Detect existing VENDOR_INQUIRY conversation with this vendor
+    const existingConv = useMemo(() => {
+        if (!application.vendorUserId) return null;
+        return conversations.find((conv) => {
+            const parts = conv.participants ?? conv.members ?? [];
+            return parts.some(
+                (p) => String(p.userId ?? p.id ?? '') === String(application.vendorUserId)
+            );
+        });
+    }, [conversations, application.vendorUserId]);
 
     return (
         <div style={{
@@ -875,11 +907,31 @@ function ApplicationRow({ application, isLast, onAccept, onReject, onRate, onVie
                             <Button size="sm" variant="secondary" icon={<Icons.x size={13} />} onClick={onReject} disabled={busy}>
                                 Reject
                             </Button>
+                            {/* Pending vendors: organiser can send a pre-acceptance inquiry */}
+                            <Button size="sm" variant="ghost" icon={<Icons.send size={13} />} onClick={onInquiry}>
+                                Send inquiry
+                            </Button>
                         </>
-                    ) : canRate ? (
-                        <Button size="sm" variant="secondary" icon={<StarIcon size={13} />} onClick={onRate}>
-                            Rate vendor
-                        </Button>
+                    ) : isAccepted ? (
+                        <>
+                            {canRate && (
+                                <Button size="sm" variant="secondary" icon={<StarIcon size={13} />} onClick={onRate}>
+                                    Rate vendor
+                                </Button>
+                            )}
+                            {/* Accepted vendors: show Message (find or create conversation) */}
+                            {existingConv ? (
+                                <Button size="sm" variant="ghost" icon={<Icons.message size={13} />}
+                                    onClick={() => navigate(`/messages?c=${existingConv.id}`)}>
+                                    Message
+                                </Button>
+                            ) : (
+                                <MessageButton
+                                    eventId={eventId}
+                                    vendorProfileId={application.vendorProfileId}
+                                />
+                            )}
+                        </>
                     ) : null}
                 </div>
                 {/* Always-visible profile link */}
@@ -1103,6 +1155,122 @@ function RateModal({ application, loading, error, onSubmit, onDismiss }) {
                         disabled={score === 0 || loading}
                     >
                         {loading ? 'Submitting…' : 'Submit rating'}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─── MessageButton — accepted vendor, no prior conversation ─────────────
+   Calls sendInquiry with a blank opening message to auto-create the thread,
+   then navigates straight to the messages page.
+   ─────────────────────────────────────────────────────────────────────── */
+function MessageButton({ eventId, vendorProfileId }) {
+    const navigate = useNavigate();
+    const [sendInquiry, { isLoading }] = useSendInquiryMutation();
+
+    async function handleClick() {
+        try {
+            const result = await sendInquiry({ eventId, vendorId: vendorProfileId }).unwrap();
+            const convId = result?.conversation?.id ?? result?.conversationId ?? result?.id;
+            navigate(convId ? `/messages?c=${convId}` : '/messages');
+        } catch {
+            navigate('/messages');
+        }
+    }
+
+    return (
+        <Button size="sm" variant="ghost" icon={<Icons.message size={13} />}
+            onClick={handleClick} disabled={isLoading}>
+            {isLoading ? 'Opening…' : 'Message'}
+        </Button>
+    );
+}
+
+/* ─── ApplicationInquiryModal — compose + send inquiry from the applications pane ─
+   Used for PENDING vendors where the organiser wants to ask questions before
+   making an accept/reject decision.
+   ─────────────────────────────────────────────────────────────────────────────── */
+function ApplicationInquiryModal({ eventId, vendorProfileId, onDismiss }) {
+    const navigate = useNavigate();
+    const [sendInquiry, { isLoading }] = useSendInquiryMutation();
+    const [message, setMessage] = useState('');
+    const [error, setError]     = useState('');
+
+    async function handleSubmit() {
+        setError('');
+        if (!message.trim()) { setError('Please write a message.'); return; }
+        try {
+            const result = await sendInquiry({
+                eventId,
+                vendorId: vendorProfileId,
+                openingMessage: message.trim(),
+            }).unwrap();
+            const convId = result?.conversation?.id ?? result?.conversationId ?? result?.id;
+            onDismiss();
+            navigate(convId ? `/messages?c=${convId}` : '/messages');
+        } catch (err) {
+            setError(err?.data?.message || 'Could not send inquiry. Please try again.');
+        }
+    }
+
+    return (
+        <div
+            role="dialog"
+            aria-label="Send inquiry"
+            onClick={onDismiss}
+            style={{
+                position: 'fixed', inset: 0, zIndex: 1000,
+                background: 'rgba(2,16,45,0.55)',
+                display: 'grid', placeItems: 'center', padding: 20,
+            }}
+        >
+            <div onClick={(e) => e.stopPropagation()} style={{
+                width: '100%', maxWidth: 460, background: 'var(--surface-elevated)',
+                borderRadius: 16, boxShadow: 'var(--shadow-modal)', padding: 28,
+            }}>
+                <h2 className="mp-h3" style={{ margin: 0, color: 'var(--text-1)' }}>
+                    Send inquiry
+                </h2>
+                <p className="body-sm" style={{ margin: '6px 0 20px', color: 'var(--text-2)' }}>
+                    Ask this vendor a question before accepting or rejecting their application.
+                </p>
+                <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Hi, we're interested in your services for this event…"
+                    rows={4}
+                    style={{
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '10px 12px', borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        fontFamily: 'inherit', fontSize: 14, color: 'var(--text-1)',
+                        resize: 'vertical', outline: 'none',
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = 'var(--mp-blue)'; }}
+                    onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; }}
+                />
+                {error && (
+                    <div role="alert" style={{
+                        marginTop: 10, padding: '10px 12px',
+                        background: 'var(--error-bg, #FBE9E9)', color: 'var(--error)',
+                        borderRadius: 8, fontSize: 13,
+                    }}>
+                        {error}
+                    </div>
+                )}
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
+                    <Button variant="ghost" size="md" onClick={onDismiss} disabled={isLoading}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary" size="md"
+                        onClick={handleSubmit}
+                        disabled={!message.trim() || isLoading}
+                        icon={<Icons.send size={15} />}
+                    >
+                        {isLoading ? 'Sending…' : 'Send inquiry'}
                     </Button>
                 </div>
             </div>
