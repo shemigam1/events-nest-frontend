@@ -7,4 +7,8 @@ dist
 *.log
 .env
 .env.*
+# But DO ship .env.production — it holds the prod-only public Vite vars
+# (Google Maps key, etc.) that `vite build` reads at image build time.
+# The negation must come AFTER the .env.* exclusion to take effect.
+!.env.production
 coverage

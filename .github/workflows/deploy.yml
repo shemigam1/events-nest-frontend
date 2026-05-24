@@ -12,6 +12,10 @@
 #   EC2_HOST               — Elastic IP of the EC2 box
 #   EC2_USER               — typically `ubuntu`
 #   EC2_SSH_PRIVATE_KEY    — full contents of ~/.ssh/eventsnest-ec2.pem
+#
+# Frontend-only secrets (public Vite vars — baked into the bundle):
+#   VITE_GOOGLE_MAPS_API_KEY  — Maps JS API key, restricted to prod HTTP
+#                               referrer in Google Cloud Console
 
 name: Deploy Frontend to EC2
 
@@ -48,11 +52,13 @@ jobs:
       - name: Build and push frontend image
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
         run: |
           IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker build \
             --platform linux/amd64 \
             -f Dockerfile.frontend \
+            --build-arg VITE_GOOGLE_MAPS_API_KEY="$VITE_GOOGLE_MAPS_API_KEY" \
             -t $IMAGE_URI \
             .
           docker push $IMAGE_URI
