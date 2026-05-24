@@ -102,6 +102,7 @@ export default function MessagesPage() {
                 if (cancelled) return;
                 setConnected(true);
                 setConnError('');
+                setSendError('');   // clear any stale "not connected" banner on reconnect
                 // Invalidate cached message history so RTK Query refetches —
                 // picks up any messages that arrived while STOMP was connecting.
                 dispatch(messagesApi.util.invalidateTags(['ConversationMessages']));
@@ -432,10 +433,11 @@ export default function MessagesPage() {
                                     onKeyDown={e => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault();
-                                            handleSend();
+                                            if (connected) handleSend();
                                         }
                                     }}
-                                    placeholder="Type a message… (Enter to send)"
+                                    placeholder={connected ? 'Type a message… (Enter to send)' : 'Connecting to chat…'}
+                                    disabled={!connected}
                                     rows={1}
                                     style={{
                                         flex: 1,
@@ -449,6 +451,8 @@ export default function MessagesPage() {
                                         outline: 'none',
                                         background: 'var(--surface-subtle, #F8F9FA)',
                                         lineHeight: 1.5,
+                                        opacity: connected ? 1 : 0.5,
+                                        cursor: connected ? 'text' : 'not-allowed',
                                     }}
                                     onFocus={e => { e.target.style.borderColor = 'var(--mp-blue)'; }}
                                     onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
@@ -456,7 +460,7 @@ export default function MessagesPage() {
                                 <button
                                     type="button"
                                     onClick={handleSend}
-                                    disabled={!draft.trim()}
+                                    disabled={!draft.trim() || !connected}
                                     style={{
                                         width: 40,
                                         height: 40,
