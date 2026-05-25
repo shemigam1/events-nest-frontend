@@ -1,6 +1,6 @@
 # EventNest Frontend
 
-**Authors:** Bassey John, Oluwasemilore Omotade-Michaels
+**Authors:**  Oluwasemilore Omotade-Michaels, Bassey John
 **Date:** 24/05/2026
 
 ## Overview
@@ -124,9 +124,7 @@ VITE_GOOGLE_CLIENT_ID=
 # Optional — Google Maps Places API key (leave blank to disable venue autocomplete)
 VITE_GOOGLE_MAPS_API_KEY=
 
-# Optional — Monnify payment gateway (leave blank to disable ticket checkout)
-VITE_MONNIFY_API_KEY=
-VITE_MONNIFY_CONTRACT_CODE=
+
 ```
 
 Only `VITE_API_BASE_URL` is required to run the application. All other variables are optional for local development.
@@ -139,7 +137,7 @@ npm run dev
 
 The app opens at **http://localhost:5173**.
 
-> Ensure the backend is already running at `http://localhost:8080` before logging in or loading any data. See [jbassie/event-nest-backend](https://github.com/jbassie/event-nest-backend#setup-instructions).
+> Ensure the backend is already running at `http://localhost:8080` before logging in or loading any data. See [jbassie/event-nest-backend](https://github.com/jbassie/event-nest-backend).
 
 ### 5. Verify the App Is Running
 
