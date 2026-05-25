@@ -43,6 +43,7 @@ import VendorApplyPage from '../features/vendor/pages/VendorApplyPage';
 import VendorEventPage from '../features/vendor/pages/VendorEventPage';
 import VendorDashboardPage from '../features/vendor/pages/VendorDashboardPage';
 import CheckInPage from '../features/checkin/pages/CheckInPage';
+import CheckInScannerPage from '../features/checkin/pages/CheckInScannerPage';
 import PaymentResultPage from '../features/bookings/pages/PaymentResultPage';
 import VendorMarketplacePage from '../features/vendor/pages/VendorMarketplacePage';
 import VendorDetailPage from '../features/vendor/pages/VendorDetailPage';
@@ -69,7 +70,8 @@ const router = createBrowserRouter([
             { path: '/reset-password',   element: <ResetPasswordPage /> },
             { path: '/terms',            element: <TermsPage /> },
             { path: '/privacy',          element: <PrivacyPage /> },
-            { path: '/checkin',        element: <CheckInPage /> },
+            { path: '/checkin',                   element: <CheckInPage /> },
+            { path: '/checkin/:eventId',          element: <CheckInScannerPage /> },
             { path: '/vendors',        element: <VendorMarketplacePage /> },
             { path: '/vendors/:id',    element: <VendorDetailPage /> },
             { path: '/payment-result', element: <PaymentResultPage /> },
